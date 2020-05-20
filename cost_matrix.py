@@ -34,6 +34,6 @@ def graphhopper_matrix(zones_athens):
     dir = f"data/tables/"
     if not os.path.exists(dir):
         os.makedirs(dir)
-    np.savetxt(fname = f'{dir}/DistanceTableAthens.csv', X = distance_matrix, fmt='%1.1f', delimiter=',')
-    np.savetxt(fname = f'{dir}/TimeTableAthens.csv', X = time_matrix, fmt='%1.1f', delimiter=',')
+    np.savetxt(fname = f'{dir}/DistanceTableAthensMoto.csv', X = distance_matrix, fmt='%1.1f', delimiter=',')
+    np.savetxt(fname = f'{dir}/TimeTableAthensMoto.csv', X = time_matrix, fmt='%1.1f', delimiter=',')
     return response

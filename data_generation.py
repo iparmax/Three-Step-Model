@@ -7,8 +7,9 @@ from matplotlib import pyplot
 from matplotlib import patheffects
 import pandas as pd
 import unicodedata
-from test import graphhopper_matrix
+from cost_matrix import graphhopper_matrix
 from ipfn import ipfn
+import networkx
 
 # to remove greek accents 
 def strip_accents(s):
@@ -42,8 +43,8 @@ for i,j in zip(zones['NAME'],zones['KWD_YPES']):
 
 # plot map 
 zones_athens = geopandas.GeoDataFrame(zones,index=idx)
-zones_athens.plot()
-pyplot.show()
+zones_athens['NAME'] = zones_athens['NAME'].apply(lambda i: strip_accents(i.upper()))
+#graphhopper_matrix(zones_athens)
 
 df['Attraction'] = (df['Attraction'] * df.sum()['Production'] / df.sum()['Attraction'])
 df.index = df.NAME
@@ -71,7 +72,42 @@ def tripDistribution(tripGeneration, costMatrix):
     return(trips.pivot(index='ozone', columns='dzone', values='total'))
 
 trips = tripDistribution(trip_generation, cost_matrix)
-print(trips)
-print(trip_generation)
+driving_trips = trips.values/2
+driving_trips = pd.DataFrame(driving_trips)
+driving_trips.index=trips.index
+driving_trips.columns=trips.columns
 
-#print(trips)
+def routeAssignment(zones, trips):
+  G = networkx.Graph()
+  for index, row in zones_athens.iterrows():
+    zone1,cent1,name1 = row['geometry'],row['centroid'],strip_accents(row['NAME'].upper())
+    for index, row in zones_athens.iterrows():
+      zone2,cent2,name2 = row['geometry'],row['centroid'],strip_accents(row['NAME'].upper())
+      if zone2.intersects(zone1):
+        G.add_edge(name1, name2, distance = cost_matrix.at[name1,name2],volume=0.0)
+  for origin in trips:
+    for destination in trips:
+      path = networkx.shortest_path(G, origin, destination,weight='distance')
+      for i in range(len(path) - 1):
+        G[path[i]][path[i + 1]]['volume'] = G[path[i]][path[i + 1]]['volume'] + trips[path[i]][path[i+1]]
+  return(G)
+
+def visualize(G, zones):
+  fig = pyplot.figure(1, figsize=(10, 10), dpi=90)
+  ax = fig.add_subplot(111)
+  zonesT = zones
+  zonesT.plot(ax = ax)
+  for i, row in zones.iterrows():
+    text = pyplot.annotate(s=row['NAME'], xy=((row['centroid'][1], row['centroid'][0])), horizontalalignment='center', fontsize=6)
+    text.set_path_effects([patheffects.Stroke(linewidth=3, foreground='white'), patheffects.Normal()])
+  for zone in G.edges:
+    volume = G[zone[0]][zone[1]]['volume']
+    p1 = ((zones.loc[zones['NAME'] == zone[0],'centroid']).values)[0]
+    p2 = ((zones.loc[zones['NAME'] == zone[1],'centroid']).values)[0]
+    x = p1[1], p2[1]
+    y = p1[0], p2[0]
+    ax.plot(x, y, color='#444444', linewidth=volume/50000, solid_capstyle='round', zorder=1)
+  pyplot.show()
+
+G = routeAssignment(zones_athens,driving_trips)
+visualize(G, zones_athens)
