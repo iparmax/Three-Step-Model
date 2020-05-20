@@ -7,6 +7,8 @@ from matplotlib import pyplot
 from matplotlib import patheffects
 import pandas as pd
 import unicodedata
+from test import graphhopper_matrix
+from ipfn import ipfn
 
 # to remove greek accents 
 def strip_accents(s):
@@ -14,12 +16,12 @@ def strip_accents(s):
                   if unicodedata.category(c) != 'Mn')
 
 # assert that cities of table are equal to indices of geojson
-df = (pd.read_csv('data/workers.csv',header=None))
-column = df[0].values
+df = (pd.read_csv('data/workers.csv'))
+column = df['NAME'].values
 
 new_col =[]
 for i in column:
-    new_col.append(strip_accents(i[6:]))
+    new_col.append(strip_accents(i))
 
 # load map from api 
 
@@ -42,3 +44,34 @@ for i,j in zip(zones['NAME'],zones['KWD_YPES']):
 zones_athens = geopandas.GeoDataFrame(zones,index=idx)
 zones_athens.plot()
 pyplot.show()
+
+df['Attraction'] = (df['Attraction'] * df.sum()['Production'] / df.sum()['Attraction'])
+df.index = df.NAME
+df.sort_index(inplace=True)
+
+pd.set_option('display.float_format', lambda x: '%.0f' % x)
+trip_generation = df[['Production', 'Attraction']]
+
+cost_matrix = pd.read_csv('data/tables/DistanceTableAthens.csv',header=None)
+cost_matrix.index=df.index
+cost_matrix.columns=df.index
+
+def tripDistribution(tripGeneration, costMatrix):
+    costMatrix['ozone'] = costMatrix.columns
+    costMatrix = costMatrix.melt(id_vars=['ozone'])
+    costMatrix.columns = ['ozone', 'dzone', 'total']
+    production = tripGeneration['Production']
+    production.index.name = 'ozone'
+    attraction = tripGeneration['Attraction']
+    attraction.index.name = 'dzone'
+    aggregates = [production, attraction]
+    dimensions = [['ozone'], ['dzone']]
+    IPF = ipfn.ipfn(costMatrix, aggregates, dimensions)
+    trips = IPF.iteration()
+    return(trips.pivot(index='ozone', columns='dzone', values='total'))
+
+trips = tripDistribution(trip_generation, cost_matrix)
+print(trips)
+print(trip_generation)
+
+#print(trips)
