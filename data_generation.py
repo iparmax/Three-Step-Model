@@ -46,17 +46,22 @@ zones_athens = geopandas.GeoDataFrame(zones,index=idx)
 zones_athens['NAME'] = zones_athens['NAME'].apply(lambda i: strip_accents(i.upper()))
 #graphhopper_matrix(zones_athens)
 
-df['Attraction'] = (df['Attraction'] * df.sum()['Production'] / df.sum()['Attraction'])
+df['Attraction'] = (df['Employment'] * df.sum()['Production'] / df.sum()['Employment'])
 df.index = df.NAME
 df.sort_index(inplace=True)
 
 pd.set_option('display.float_format', lambda x: '%.0f' % x)
 trip_generation = df[['Production', 'Attraction']]
-
+print(len(df))
+print(len(zones_athens))
 cost_matrix = pd.read_csv('data/tables/DistanceTableAthens.csv',header=None)
+print((cost_matrix))
 cost_matrix.index=df.index
 cost_matrix.columns=df.index
 
+
+print(trip_generation)
+print(cost_matrix)
 def tripDistribution(tripGeneration, costMatrix):
     costMatrix['ozone'] = costMatrix.columns
     costMatrix = costMatrix.melt(id_vars=['ozone'])
@@ -106,7 +111,7 @@ def visualize(G, zones):
     p2 = ((zones.loc[zones['NAME'] == zone[1],'centroid']).values)[0]
     x = p1[1], p2[1]
     y = p1[0], p2[0]
-    ax.plot(x, y, color='#444444', linewidth=volume/50000, solid_capstyle='round', zorder=1)
+    ax.plot(x, y, color='#D61F1F', linewidth=volume/50000, solid_capstyle='round', zorder=1)
   pyplot.show()
 
 G = routeAssignment(zones_athens,driving_trips)
