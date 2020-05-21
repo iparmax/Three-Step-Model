@@ -19,6 +19,7 @@ class Assignment():
                 zone2,cent2,name2 = row['geometry'],row['centroid'],row['NAME']
                 if zone2.intersects(zone1):
                     G.add_edge(name1, name2, distance = self.cost_matrix.at[name1,name2],volume=0.0)
+
         for origin in self.trip_distribution:
             for destination in self.trip_distribution:
                 path = networkx.shortest_path(G, origin, destination,weight='distance')
@@ -42,4 +43,5 @@ class Assignment():
             x = p1[1], p2[1]
             y = p1[0], p2[0]
             ax.plot(x, y, color='#D61F1F', linewidth=volume/50000, solid_capstyle='round', zorder=1)
+            
         pyplot.show()

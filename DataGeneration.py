@@ -1,4 +1,4 @@
-# DataGeneration
+# DataGeneration.py
 
 # Import Libraries 
 import requests
@@ -37,6 +37,7 @@ class DataGeneration():
 
         zones_athens = geopandas.GeoDataFrame(self.zones,index=idx)
         zones_athens['KWD_YPES'] = zones_athens['KWD_YPES'].astype(int)
+
         # fix for duplicate cities in geojson
         zones_athens = zones_athens.drop(zones_athens[zones_athens.KWD_YPES > 9250].index)
         zones_athens = zones_athens.reset_index(drop=True)
@@ -49,6 +50,5 @@ class DataGeneration():
         round_attraction = (saferound(self.data['Attraction'], places=0))
         mod_attraction = ([int(x) for x in round_attraction])
         df['Attraction']= mod_attraction
-
         return df
     
